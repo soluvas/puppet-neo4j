@@ -2,34 +2,125 @@
 #
 # For installing neo4j server.
 #
-class neo4j {
+class neo4j (
+  $release = 'neo4j-community-1.6',
+  $mirror_url = 'http://dist.neo4j.org/',
+  $bind_address = '127.0.0.1',
+  $allow_store_upgrade = false)
+{
+  $download_file = "${release}-unix.tar.gz"
+  $download_url = "${mirror_url}${download_file}"
 
-  $release = "neo4j-community-1.5.M01"
-
+  # Create group, user, and home folder
+  group { neo4j:
+    ensure => present
+  }
+  user { neo4j:
+    ensure => present,
+    managehome => false,
+    home => '/usr/share/neo4j',
+    gid => 'neo4j',
+    require => Group['neo4j'],
+    comment => 'Neo4j Graph Database'
+  }
+  # workaround for Puppet bug about user not added to group
+  exec { '/usr/sbin/adduser neo4j neo4j':
+    unless => "/bin/grep 'neo4j.*neo4j' /etc/group",
+    require => [ Group['neo4j'], User['neo4j'] ]
+  }
+  file { '/etc/neo4j':
+    ensure => directory,
+    owner => 'neo4j', group => 'neo4j',
+    mode => 0775,
+    require => [ Group['neo4j'] ]
+  }
+  file { '/var/run/neo4j':
+    ensure => directory,
+    owner => 'neo4j', group => 'neo4j',
+    mode => 0775,
+    require => [ Group['neo4j'], User['neo4j'] ]
+  }
+  file { '/var/log/neo4j':
+    ensure => directory,
+    owner => 'neo4j', group => 'neo4j',
+    mode => 0775,
+    require => [ Group['neo4j'], User['neo4j'] ]
+  }
+  file { '/var/lib/neo4j':   # DB data directory
+    ensure => directory,
+    owner => 'neo4j', group => 'neo4j',
+    mode => 0770,
+    require => [ Group['neo4j'], User['neo4j'] ]
+  }
+  
   exec { 'neo4j-download':
-    command => "wget -O /var/tmp/${release}-unix.tar.gz http://dist.neo4j.org/${release}-unix.tar.gz",
+    command => "curl -v --progress-bar -o '/var/tmp/${download_file}' '$download_url'",
     creates => "/var/tmp/${release}-unix.tar.gz",
     path => ["/bin", "/usr/bin"],
+    logoutput => true,
+    user => 'neo4j', group => 'neo4j',
+    require => [ Group['neo4j'], User['neo4j'], Package['curl'] ],
+    unless => '/usr/bin/test -d /usr/share/neo4j'
   }
   
   exec { 'neo4j-extract':
-    command => "tar -xzf /var/tmp/${release}-unix.tar.gz -C /opt",
-    creates => "/opt/${release}",
+    command => "tar -xzf /var/tmp/${download_file} -C /var/tmp",
+    creates => "/var/tmp/${release}",
     path => ["/bin", "/usr/bin"],
-    require => Exec['neo4j-download'],
+    user => 'neo4j', group => 'neo4j',
+    require => [ Group['neo4j'], User['neo4j'], Exec['neo4j-download'] ],
+    unless => '/usr/bin/test -d /usr/share/neo4j'
+  }
+  exec { move_neo4j:
+    command => "mv -v '/var/tmp/${release}' /usr/share/neo4j",
+    creates => '/usr/share/neo4j',
+    logoutput => true,
+    path => ["/bin", "/usr/bin"],
+    require => Exec['neo4j-extract']
+  }
+  file { '/usr/share/neo4j':
+  	ensure => directory,
+  	mode => 0775,
+  	require => Exec['move_neo4j'],
   }
   
-  exec { 'neo4j-install':
-    command => "yes '' | /opt/${release}/bin/neo4j install",
-    unless => "service neo4j-service status",
-    require => Exec['neo4j-extract'],
-    notify => Service['neo4j-service'],
+  file { '/etc/neo4j/neo4j-server.properties':
+  	content => template('neo4j/neo4j-server.properties.erb'),
+  	owner => 'neo4j', group => 'neo4j',
+  	mode => 0440,
+  	require => File['/etc/neo4j'],
+  	notify => Service['neo4j-service']
+  }
+  file { '/etc/neo4j/neo4j-wrapper.conf':
+  	content => template('neo4j/neo4j-wrapper.conf.erb'),
+  	require => Exec['move_neo4j']
+  }
+  file { '/etc/neo4j/neo4j.properties':
+  	content => template('neo4j/neo4j.properties.erb'),
+  	owner => 'neo4j', group => 'neo4j',
+  	mode => 0664,
+  	require => File['/etc/neo4j']
+  }
+  file { '/etc/neo4j/logging.properties':
+  	content => template('neo4j/logging.properties.erb'),
+  	owner => 'neo4j', group => 'neo4j',
+  	mode => 0664,
+  	require => File['/etc/neo4j']
+  }
+  file { '/etc/init.d/neo4j-service':
+  	content => template('neo4j/neo4j-service.sh.erb'),
+  	owner => 'root', group => 'root',
+  	mode => 0755,
+  	require => Package['lsof'],
+  	notify => Service['neo4j-service']
   }
   
-  service { 'neo4j-service':
-    enable  => true,
-    ensure  => running,
-    hasrestart => true,
-    require => Exec['neo4j-install'],
-  }
+#  service { 'neo4j-service':
+#    enable  => true,
+#    ensure  => running,
+#    hasrestart => true,
+#    require => Exec['neo4j-install'],
+#  }
+  
 }
+Class['neo4j'] -> Service['neo4j-service']
