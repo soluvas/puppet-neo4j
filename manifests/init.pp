@@ -117,6 +117,10 @@ class neo4j (
   }
   
   # Linux specific notes
+  # Note: Although the limit has been raised, neo4j may still complain (it's neo4j's bug):
+  #   WARNING: Detected a limit of 1024 for maximum open files, while a minimum value of 40000 is recommended.
+  # This is NORMAL.
+  # To check yourself, "sudo su neo4j" then "ulimit -n", you'll see 40000
   exec { neo4j_security_limits:
 	command => 'sed -i -e \'$a neo4j    soft    nofile    40000\' -e \'$a neo4j    hard    nofile    40000\' /etc/security/limits.conf',
 	logoutput => true,
