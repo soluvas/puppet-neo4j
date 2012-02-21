@@ -84,6 +84,14 @@ class neo4j (
   	mode => 0775,
   	require => Exec['move_neo4j'],
   }
+  file { '/usr/bin/neo4j':
+  	ensure => '/usr/share/neo4j/bin/neo4j',
+  	require => Exec['move_neo4j']
+  }
+  file { '/usr/bin/neo4j-shell':
+  	ensure => '/usr/share/neo4j/bin/neo4j-shell',
+  	require => Exec['move_neo4j']
+  }
   
   file { '/etc/neo4j/neo4j-server.properties':
   	content => template('neo4j/neo4j-server.properties.erb'),
