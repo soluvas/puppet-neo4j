@@ -2,6 +2,12 @@ h1. Neo4j module
 
 This module installs Neo4j as a standalone server.
 
+h2. Requirements
+
+1. @curl@ package
+2. @lsof@ packae
+3. @openjdk-7-jre-headless@ package or any JRE
+
 h2. Typical Usage
 
 bc. package { curl: ensure => present }
@@ -9,13 +15,6 @@ package { lsof: ensure => present }
 package { openjdk-7-jre-headless: ensure => present }
 class { neo4j: }
 Package['openjdk-7-jre-headless'] -> Class['neo4j']
-service { 'neo4j-service':
-  enable  => true,
-  ensure  => running,
-  hasrestart => true,
-  hasstatus => true,  
-  require => Class['neo4j']
-}
 
 h2. Use Your Own URL
 

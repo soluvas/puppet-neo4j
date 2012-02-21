@@ -6,7 +6,8 @@ class neo4j (
   $release = 'neo4j-community-1.6',
   $mirror_url = 'http://dist.neo4j.org/',
   $bind_address = '127.0.0.1',
-  $allow_store_upgrade = false)
+  $allow_store_upgrade = false,
+  $enable_service = true)
 {
   $download_file = "${release}-unix.tar.gz"
   $download_url = "${mirror_url}${download_file}"
@@ -115,12 +116,34 @@ class neo4j (
   	notify => Service['neo4j-service']
   }
   
-#  service { 'neo4j-service':
-#    enable  => true,
-#    ensure  => running,
-#    hasrestart => true,
-#    require => Exec['neo4j-install'],
-#  }
+  # Linux specific notes
+  exec { neo4j_security_limits:
+	command => 'sed -i -e \'$a neo4j    soft    nofile    40000\' -e \'$a neo4j    hard    nofile    40000\' /etc/security/limits.conf',
+	logoutput => true,
+	unless => 'grep "neo4j" /etc/security/limits.conf',
+	path => ['/bin', '/usr/bin']
+  }
+  exec { neo4j_pam_limits:
+	command => 'sed -i -e \'s/# session    required   pam_limits.so/session    required   pam_limits.so/\' /etc/pam.d/su',
+	logoutput => true,
+	onlyif => 'grep "# session    required   pam_limits.so" /etc/pam.d/su',
+	path => ['/bin', '/usr/bin']
+  }
+
+  service { neo4j-service:
+    enable  => $enable_service,
+    ensure  => running,
+    hasrestart => true,
+    hasstatus => true,
+    status => '/usr/sbin/service neo4j-service status | grep "is running"',
+    require => [ File['/usr/share/neo4j'],
+      File['/etc/neo4j/neo4j-server.properties'],
+      File['/etc/neo4j/neo4j-wrapper.conf'],
+      File['/etc/neo4j/neo4j.properties'],
+      File['/etc/neo4j/logging.properties'],
+      File['/etc/init.d/neo4j-service'],
+      Exec['neo4j_pam_limits']
+    ]
+  }
   
-}
-Class['neo4j'] -> Service['neo4j-service']
+}	
