@@ -1,0 +1,27 @@
+h1. Neo4j module
+
+This module installs Neo4j as a standalone server.
+
+h2. Typical Usage
+
+bc. package { curl: ensure => present }
+package { lsof: ensure => present }
+package { openjdk-7-jre-headless: ensure => present }
+class { neo4j: }
+Package['openjdk-7-jre-headless'] -> Class['neo4j']
+service { 'neo4j-service':
+  enable  => true,
+  ensure  => running,
+  hasrestart => true,
+  hasstatus => true,  
+  require => Class['neo4j']
+}
+
+h2. Use Your Own URL
+
+Useful for Vagrant VMs.
+
+bc. class { neo4j:
+  release => 'neo4j-community-1.6',
+  mirror_url => 'http://33.33.33.1:8081/nexus/service/local/repositories/thirdparty/content/org/neo4j/neo4j-community/1.6/'
+}
