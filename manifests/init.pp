@@ -24,11 +24,6 @@ class neo4j (
     require => Group['neo4j'],
     comment => 'Neo4j Graph Database'
   }
-  # workaround for Puppet bug about user not added to group
-  exec { '/usr/sbin/adduser neo4j neo4j':
-    unless => "/bin/grep 'neo4j.*neo4j' /etc/group",
-    require => [ Group['neo4j'], User['neo4j'] ]
-  }
   file { '/etc/neo4j':
     ensure => directory,
     owner => 'neo4j', group => 'neo4j',
