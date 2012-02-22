@@ -1,4 +1,7 @@
-h1. Neo4j module
+h1. Neo4j module for Puppet
+
+* Developed by "Hendy Irawan":http://www.hendyirawan.com/
+* Originally forked from "alfredc/puppet-neo4j":https://github.com/alfredc/puppet-neo4j
 
 This module installs Neo4j as a standalone server.
 
