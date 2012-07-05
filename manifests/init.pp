@@ -3,7 +3,7 @@
 # For installing neo4j server.
 #
 class neo4j (
-  $release             = 'neo4j-community-1.7',
+  $release             = 'neo4j-community-1.7.2',
   $mirror_url          = 'http://dist.neo4j.org/',
   $bind_address        = '127.0.0.1',
   $allow_store_upgrade = false,
@@ -50,7 +50,7 @@ class neo4j (
     mode    => 0770,
     require => [ Group['neo4j'], User['neo4j'] ]
   }
-  
+
   exec { 'neo4j-download':
     command   => "curl -v --progress-bar -o '/var/tmp/${download_file}' '$download_url'",
     creates   => "/var/tmp/${release}-unix.tar.gz",
@@ -61,7 +61,7 @@ class neo4j (
     require   => [ Group['neo4j'], User['neo4j'], Package['curl'] ],
     unless    => '/usr/bin/test -d /usr/share/neo4j'
   }
-  
+
   exec { 'neo4j-extract':
     command   => "tar -xzf /var/tmp/${download_file} -C /var/tmp",
     creates   => "/var/tmp/${release}",
@@ -92,7 +92,7 @@ class neo4j (
     ensure  => '/usr/share/neo4j/bin/neo4j-shell',
     require => Exec['move_neo4j']
   }
-  
+
   file { '/etc/neo4j/neo4j-server.properties':
     content => template('neo4j/neo4j-server.properties.erb'),
     owner   => 'neo4j',
@@ -127,7 +127,7 @@ class neo4j (
     require => Package['lsof'],
     notify  => Service['neo4j-service']
   }
-  
+
   # Linux specific notes
   # Note: Although the limit has been raised, neo4j may still complain (it's neo4j's bug):
   #   WARNING: Detected a limit of 1024 for maximum open files, while a minimum value of 40000 is recommended.
@@ -157,5 +157,5 @@ class neo4j (
 	       '/etc/neo4j/neo4j-wrapper.conf', '/etc/neo4j/neo4j.properties',
            '/etc/neo4j/logging.properties', '/etc/init.d/neo4j-service'] ],
   }
-  
+
 }
