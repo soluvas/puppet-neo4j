@@ -122,7 +122,7 @@ class neo4j (
   file { '/etc/init.d/neo4j-service':
     content => template('neo4j/neo4j-service.sh.erb'),
     owner   => 'root',
-	group   => 'root',
+	  group   => 'root',
     mode    => 0755,
     require => Package['lsof'],
     notify  => Service['neo4j-service']
@@ -155,7 +155,7 @@ class neo4j (
     require    => [ Exec['neo4j_pam_limits'],
 	  File['/usr/share/neo4j', '/etc/neo4j/neo4j-server.properties',
 	       '/etc/neo4j/neo4j-wrapper.conf', '/etc/neo4j/neo4j.properties',
-           '/etc/neo4j/logging.properties', '/etc/init.d/neo4j-service'] ],
+         '/etc/neo4j/logging.properties', '/etc/init.d/neo4j-service'] ],
   }
 
 }
