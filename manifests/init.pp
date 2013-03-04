@@ -16,7 +16,7 @@ class neo4j (
   group { neo4j: ensure => present }
   user { neo4j:
     ensure     => present,
-    managehome => false,
+    managehome => false,     # Not working in Amazon Linux 2012.09 using Puppet
     home       => '/usr/share/neo4j',
     gid        => 'neo4j',
     require    => Group['neo4j'],
@@ -66,9 +66,9 @@ class neo4j (
     command   => "tar -xzf /var/tmp/${download_file} -C /var/tmp",
     creates   => "/var/tmp/${release}",
     path      => ["/bin", "/usr/bin"],
-	logoutput => true,
+	  logoutput => true,
     user      => 'neo4j',
-	group     => 'neo4j',
+	  group     => 'neo4j',
     require   => [ Group['neo4j'], User['neo4j'], Exec['neo4j-download'] ],
     unless    => '/usr/bin/test -d /usr/share/neo4j'
   }
@@ -153,9 +153,9 @@ class neo4j (
     hasstatus  => true,
     status     => '/usr/sbin/service neo4j-service status | grep "is running"',
     require    => [ Exec['neo4j_pam_limits'],
-	  File['/usr/share/neo4j', '/etc/neo4j/neo4j-server.properties',
-	       '/etc/neo4j/neo4j-wrapper.conf', '/etc/neo4j/neo4j.properties',
-         '/etc/neo4j/logging.properties', '/etc/init.d/neo4j-service'] ],
+	                  File['/usr/share/neo4j', '/etc/neo4j/neo4j-server.properties',
+	                       '/etc/neo4j/neo4j-wrapper.conf', '/etc/neo4j/neo4j.properties',
+                         '/etc/neo4j/logging.properties', '/etc/init.d/neo4j-service'] ],
   }
 
 }
